@@ -80,8 +80,21 @@ class Server(object):
         """
 
         # TODO: YOUR CODE HERE
+        # Here's one way to do it:
+        rooms = {0: "You're in a white room with black curtains",
+                 1: "This room is red, and you want to paint it black",
+                 2: "This is a room with a view",
+                 3: "This room is just weird. Seriously, it's...weird"}
+        description = rooms.get(self.room)
+        return description
 
-        pass
+        # Here's another way of doing it:
+        # rooms = ["You're in a white room with black curtains",
+        #          "This room is red, and you want to paint it black",
+        #          "This is a room with a view",
+        #          "This room is just weird. Seriously, it's...weird"]
+        # description = rooms[room_number]
+        # return description
 
     def greet(self):
         """
@@ -109,8 +122,16 @@ class Server(object):
         """
 
         # TODO: YOUR CODE HERE
+        received = b''
 
-        pass
+        while b'\n' not in received:
+            received += self.client_connection.recv(16)
+            if len(received) > 2048:
+                self.done = True
+                break
+
+        self.input_buffer = received.decode().strip()
+
 
     def move(self, argument):
         """
@@ -134,8 +155,20 @@ class Server(object):
         """
 
         # TODO: YOUR CODE HERE
+        if self.room == 0 and argument == "north":
+            self.room = 3
+        if self.room == 3 and argument == "south":
+            self.room = 0
+        if self.room == 0 and argument == "west":
+            self.room = 1
+        if self.room == 1 and argument == "east":
+            self.room = 0
+        if self.room == 0 and argument == "east":
+            self.room = 2
+        if self.room == 2 and argument == "west":
+            self.room = 0
 
-        pass
+        self.output_buffer = self.room_description(self.room)
 
     def say(self, argument):
         """
@@ -152,8 +185,7 @@ class Server(object):
         """
 
         # TODO: YOUR CODE HERE
-
-        pass
+        self.output_buffer = f'You say, "{argument}"'
 
     def quit(self, argument):
         """
@@ -168,8 +200,9 @@ class Server(object):
         """
 
         # TODO: YOUR CODE HERE
+        self.done = True
+        self.output_buffer = "Goodbye!"
 
-        pass
 
     def route(self):
         """
@@ -184,8 +217,15 @@ class Server(object):
         """
 
         # TODO: YOUR CODE HERE
+        received = self.input_buffer.split(" ")
+        command = received.pop(0)
+        argument = " ".join(received)
 
-        pass
+        # command = self.input_buffer.split(" ")[0]  # then command is say
+        # argument = " ".join(self.input_buffer.split(" ")[1:])  # and argument is "Hello there"
+
+        command_dict = {"move": self.move, "say": self.say, "quit": self.quit}
+        command_dict[command](argument)
 
     def push_output(self):
         """
@@ -198,8 +238,9 @@ class Server(object):
         """
 
         # TODO: YOUR CODE HERE
+        output = "OK! " + self.output_buffer + "\n"
+        self.client_connection.sendall(output.encode('utf8'))
 
-        pass
 
     def serve(self):
         self.connect()
